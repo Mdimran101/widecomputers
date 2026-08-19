@@ -16,7 +16,7 @@ if (fs.existsSync(envPath)) {
 
 if (!mongodbUri) {
   // Fallback if env file doesn't parse correctly
-  mongodbUri = 'mongodb+srv://Climax Apparels:S4Epscw0SOkd5ZtG@cluster0.e5n1hnl.mongodb.net/Climax Apparels';
+  mongodbUri = 'mongodb+srv://Wide Computers:S4Epscw0SOkd5ZtG@cluster0.e5n1hnl.mongodb.net/Wide Computers';
 }
 
 console.log('Connecting to MongoDB...');

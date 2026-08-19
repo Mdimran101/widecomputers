@@ -1,7 +1,7 @@
 services:
   web:
     image: ${DOCKER_IMAGE_TAG}
-    container_name: rumasworld-app
+    container_name: widecomputers-app
     restart: unless-stopped
     ports:
       - "3003:3000"

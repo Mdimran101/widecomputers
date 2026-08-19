@@ -1,4 +1,4 @@
-# 🛍️ RumasWorld — Fashion Brand E-Commerce Website Proposal
+# 🛍️ WideComputers — Fashion Brand E-Commerce Website Proposal
 
 > **A Modern, Full-Stack E-Commerce Solution for a Premium Bangladeshi Fashion Brand**
 
@@ -6,7 +6,7 @@
 
 ## 📋 Project Overview
 
-- **Project Name:** RumasWorld
+- **Project Name:** WideComputers
 - **Project Type:** Fashion Brand E-Commerce Website
 - **Design Reference:** Aarong Bangladesh (https://www.aarong.com/bgd)
 - **Development Cost:** ৳ 30,000
@@ -20,7 +20,7 @@
 
 ## 💡 Project Vision
 
-RumasWorld will be a premium online fashion shop inspired by the elegant branding and user experience of Aarong Bangladesh. Built on Next.js, it will be blazing fast, SEO-optimized, and mobile-first. Every aspect — from customer shopping experience to backend admin management — will be automated, intelligent, and scalable.
+WideComputers will be a premium online fashion shop inspired by the elegant branding and user experience of Aarong Bangladesh. Built on Next.js, it will be blazing fast, SEO-optimized, and mobile-first. Every aspect — from customer shopping experience to backend admin management — will be automated, intelligent, and scalable.
 
 ---
 
@@ -58,7 +58,7 @@ A full-featured, premium homepage inspired by Aarong's elegant layout.
 - **New Arrivals** — New product row with scroll-triggered animations
 - **Promo Banner** — Mid-page single/dual full-width promotional banners
 - **Best Sellers** — Top-selling products section with ratings
-- **Brand Story** — RumasWorld's story, mission, and vision in an elegant layout
+- **Brand Story** — WideComputers's story, mission, and vision in an elegant layout
 - **Testimonials** — Customer review cards with auto-scroll marquee
 - **Instagram Feed** — Social proof gallery section
 - **Newsletter** — Email subscription section

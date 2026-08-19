@@ -62,7 +62,7 @@ export function AIChatbot() {
     return parts.length > 0 ? parts : content;
   };
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi there! I am your Rumas World AI assistant. How can I help you today?' },
+    { role: 'assistant', content: 'Hi there! I am your Wide Computers AI assistant. How can I help you today?' },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -148,7 +148,7 @@ export function AIChatbot() {
                   <Bot className="size-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Rumas World AI</h3>
+                  <h3 className="font-bold text-sm">Wide Computers AI</h3>
                   <p className="text-[10px] text-primary-foreground/70">Always active for you</p>
                 </div>
               </div>

@@ -7,8 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Rumas World',
-  description: 'Get in touch with Rumas World for any inquiries, support, or feedback.',
+  title: 'Contact Us | Wide Computers',
+  description: 'Get in touch with Wide Computers for any inquiries, support, or feedback.',
 };
 
 async function getSettings() {
@@ -17,9 +17,9 @@ async function getSettings() {
     const settings = await GlobalSettings.findOne().lean();
     if (!settings) {
       return {
-        brandName: "Rumas World",
+        brandName: "Wide Computers",
         contact: {
-          email: "support@RumasWorld.com",
+          email: "support@widecomputers.com",
           phone: "+8801234567890",
           address: "Dhaka, Bangladesh"
         },
@@ -145,7 +145,7 @@ export default async function ContactPage() {
                 </p>
                 <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-md border bg-muted">
                   <iframe
-                    title="Rumas World Location"
+                    title="Wide Computers Location"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}

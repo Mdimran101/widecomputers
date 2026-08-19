@@ -284,7 +284,7 @@ export default function FooterAarong() {
       <div className="border-t border-border/50 py-8 bg-muted/10">
         <div className="container mx-auto px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p className="text-center md:text-left">
-            © {currentYear} {settings?.brandName || 'Rumas World'}. All Rights Reserved.
+            © {currentYear} {settings?.brandName || 'Wide Computers'}. All Rights Reserved.
           </p>
           <div className="flex items-center gap-2">
             <span className="opacity-80">Designed & Developed by</span>

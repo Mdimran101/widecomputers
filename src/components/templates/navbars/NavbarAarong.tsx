@@ -647,7 +647,7 @@ export default function NavbarAarong() {
                 <Link href="/" className="relative block w-[44px] h-[44px] xl:w-[48px] xl:h-[48px] transition-transform hover:scale-105">
                   <Image
                     src={settings.logoUrl || "/logo.webp"}
-                    alt={`${settings.brandName || "Rumas World"} Logo`}
+                    alt={`${settings.brandName || "Wide Computers"} Logo`}
                     fill
                     sizes="48px"
                     className="object-contain"
@@ -920,7 +920,7 @@ export default function NavbarAarong() {
                 <Link href="/" className="relative block w-[85px] h-[85px] transition-transform hover:scale-105">
                   <Image
                     src={settings.logoUrl || "/logo.webp"}
-                    alt={`${settings.brandName || "Rumas World"} Logo`}
+                    alt={`${settings.brandName || "Wide Computers"} Logo`}
                     fill
                     sizes="85px"
                     className="object-contain"
@@ -936,7 +936,7 @@ export default function NavbarAarong() {
                 <div className="flex items-center justify-between w-full border-b border-border/10 pb-2 gap-4">
                   {/* Logo Brand Name Text Only */}
                   <Link href="/" className="text-xl xl:text-2xl uppercase text-foreground transition-colors hover:text-primary font-black tracking-tighter font-logo shrink-0">
-                    {settings.brandName || "RUMAS WORLD"}
+                    {settings.brandName || "WIDE COMPUTERS"}
                   </Link>
 
                   {/* Right-side Utilities */}

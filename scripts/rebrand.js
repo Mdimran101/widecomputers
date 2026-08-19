@@ -2,20 +2,20 @@ const fs = require('fs');
 const path = require('path');
 
 const replacements = [
-  ['x Apparels Atelier', 'Rumas World Atelier'],
-  ['x Apparels Boutique', 'Rumas World Boutique'],
-  ['x Apparels Curators', 'Rumas World Curators'],
-  ['x Apparels Intelligence', 'Rumas World Intelligence'],
-  ['x Apparels Editorial', 'Rumas World Editorial'],
-  ['x Apparels Assistant', 'Rumas World Assistant'],
-  ['x Apparels CO.', 'Rumas World CO.'],
-  ['x Apparels Team', 'Rumas World Team'],
-  ['x Apparels AI', 'Rumas World AI'],
-  ['x Apparelsr', 'Rumas World'],  // typo fix in manifest.ts
-  ['x Apparels', 'Rumas World'],
-  ['xApparels', 'RumasWorld'],
-  ['xapparels.com', 'rumasworld.com'],
-  ['xapparels', 'rumasworld'],
+  ['x Apparels Atelier', 'Wide Computers Atelier'],
+  ['x Apparels Boutique', 'Wide Computers Boutique'],
+  ['x Apparels Curators', 'Wide Computers Curators'],
+  ['x Apparels Intelligence', 'Wide Computers Intelligence'],
+  ['x Apparels Editorial', 'Wide Computers Editorial'],
+  ['x Apparels Assistant', 'Wide Computers Assistant'],
+  ['x Apparels CO.', 'Wide Computers CO.'],
+  ['x Apparels Team', 'Wide Computers Team'],
+  ['x Apparels AI', 'Wide Computers AI'],
+  ['x Apparelsr', 'Wide Computers'],  // typo fix in manifest.ts
+  ['x Apparels', 'Wide Computers'],
+  ['xApparels', 'WideComputers'],
+  ['xapparels.com', 'widecomputers.com'],
+  ['xapparels', 'widecomputers'],
 ];
 
 const extensions = ['.ts', '.tsx', '.js', '.jsx'];

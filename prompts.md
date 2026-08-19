@@ -1,4 +1,4 @@
-# Rumas World - Hero Banners AI Prompts (21:9 Ultra-Wide Ratio with Embedded Text & CTA)
+# Wide Computers - Hero Banners AI Prompts (21:9 Ultra-Wide Ratio with Embedded Text & CTA)
 
 Here are **5 professional ultra-wide (21:9)** hero banner prompts with **integrated typography, titles, subtitles, and CTA buttons directly inside the artwork** (just like Aarong / international luxury brand banners).
 
