@@ -359,7 +359,7 @@ export default function NavbarAarong() {
                   </div>
 
                   {/* Mobile Search Control inside Sheet */}
-                  <div className="my-3">
+                  <div className="hidden">
                     <form
                       onSubmit={(e) => {
                         handleSearchSubmit(e);
@@ -511,7 +511,7 @@ export default function NavbarAarong() {
             </div>
 
             {/* Mobile Actions — Right: Wishlist, Cart Drawer, Account */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
+            <div className="hidden">
               {/* Wishlist Link */}
               <Link
                 href="/dashboard/wishlist"
