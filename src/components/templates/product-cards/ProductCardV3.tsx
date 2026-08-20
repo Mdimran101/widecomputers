@@ -6,15 +6,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ShoppingCart, Heart, Search, MoreVertical, Edit, Trash2, Settings, Layers } from 'lucide-react';
+import { ShoppingBag, Heart, Eye, MoreVertical, Edit, Trash2, Settings } from 'lucide-react';
 import { RatingStars } from '@/components/ui/rating-stars';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
+import { fbEvent } from '@/lib/fpixel';
+import { ttEvent } from '@/lib/tiktok';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +70,6 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
   } : initialProduct;
 
   const hasVariants = product.variants && product.variants.length > 0;
-
   const [showQuickViewModal, setShowQuickViewModal] = useState(false);
 
   const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price) 
@@ -78,6 +78,7 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
 
   const handleAddToCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (hasVariants) {
       setShowQuickViewModal(true);
     } else {
@@ -94,19 +95,57 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
       quantity: 1,
       image: product.images?.[0]
     }));
+
+    // Track AddToCart
+    const addToCartPayload = {
+      content_name: product.name,
+      content_category: product.categories?.[0]?.name || 'Uncategorized',
+      content_ids: [product._id],
+      content_type: 'product',
+      value: product.salePrice || product.price,
+      currency: 'BDT',
+      quantity: 1
+    };
+    const trackingUser = {
+      em: session?.user?.email || undefined,
+      ph: (session?.user as any)?.phone || undefined,
+      fn: session?.user?.name || undefined
+    };
+    fbEvent('AddToCart', addToCartPayload, trackingUser);
+    ttEvent('AddToCart', addToCartPayload, trackingUser);
+
     toast.success(`${product.name} added to cart`);
   };
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (status === 'unauthenticated') {
       toast.error('Please login to save to wishlist');
       return;
     }
 
-    // Optimistic update
     dispatch(toggleWishlist(product._id));
     const willBeInWishlist = !isInWishlist;
+
+    if (willBeInWishlist) {
+      // Track AddToWishlist
+      const addToWishlistPayload = {
+        content_name: product.name,
+        content_category: product.categories?.[0]?.name || 'Uncategorized',
+        content_ids: [product._id],
+        content_type: 'product',
+        value: product.salePrice || product.price,
+        currency: 'BDT'
+      };
+      const trackingUser = {
+        em: session?.user?.email || undefined,
+        ph: (session?.user as any)?.phone || undefined,
+        fn: session?.user?.name || undefined
+      };
+      fbEvent('AddToWishlist', addToWishlistPayload, trackingUser);
+      ttEvent('AddToWishlist', addToWishlistPayload, trackingUser);
+    }
 
     try {
       const res = await fetch('/api/wishlist', {
@@ -122,14 +161,12 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
       toast.success(willBeInWishlist ? 'Saved to wishlist' : 'Removed from wishlist');
     } catch (err) {
       console.error('Wishlist error:', err);
-      // Rollback
       dispatch(toggleWishlist(product._id));
       toast.error('Failed to sync wishlist. Please try again.');
     }
-  };
-
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setShowQuickViewModal(true);
   };
 
@@ -159,101 +196,102 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
     }
   };
 
+  const mainCategory = product.categories && product.categories.length > 0 ? product.categories[0] : null;
+  const categoryName = mainCategory?.name || 'WIDE COMPUTERS';
+
   return (
-    <div 
-      className="group relative flex flex-col bg-background border border-neutral-200 dark:border-neutral-800 transition-all duration-300 hover:border-primary"
-      data-aos="fade-up"
-    >
-      {/* Industrial Visual Container */}
-      <div className="relative aspect-square overflow-hidden bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800">
+    <div className="w-full bg-card border border-border/40 rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg group flex flex-col h-full relative">
+      {/* Image Area */}
+      <div className="relative w-full aspect-[4/5] bg-muted/10 overflow-hidden">
         <Link href={`/product/${product.slug}`} className="relative block h-full w-full">
           <Image
             src={product.images?.[0] || '/placeholder.png'}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover w-full h-full object-center transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         </Link>
 
-        {/* Technical Badges */}
-        <div className="absolute top-0 left-0 flex flex-col z-10">
+        {/* Badge Overlay */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none">
+          {product.isNewArrival && (
+            <div className="bg-background/95 text-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-border/50 backdrop-blur-sm shadow-sm">
+              New Arrival
+            </div>
+          )}
           {discount > 0 && (
-            <div className="bg-primary text-primary-foreground font-mono text-[10px] px-2 py-1 uppercase tracking-tighter">
-              DISC_{discount}%
+            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+              -{discount}%
             </div>
           )}
           {isFlashSale && (
-            <div className="bg-orange-500 text-white font-mono text-[10px] px-2 py-1 uppercase tracking-tighter animate-pulse">
-              LIVE_FLASH
+            <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-pulse">
+              Flash
             </div>
           )}
         </div>
 
-        {/* Action Sidebar */}
-        <div className="absolute top-0 right-0 h-full hidden md:flex flex-col border-l border-neutral-100 dark:border-neutral-800 translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-background/80 backdrop-blur-md">
-           <TooltipProvider>
+        {/* Quick Actions (Wishlist & Quick View) */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
+          <TooltipProvider>
+            {/* Wishlist Button */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <button 
+                <Button
+                  size="icon"
+                  variant="secondary"
                   onClick={handleFavorite}
-                  className="flex-1 px-3 hover:text-primary transition-colors border-b border-neutral-100 dark:border-neutral-800"
+                  className="w-8 h-8 rounded-full bg-white text-black hover:text-primary hover:bg-neutral-50 shadow-sm border border-border/20 flex items-center justify-center transition-all duration-200"
+                  aria-label="Add to Wishlist"
                 >
-                  <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-primary text-primary' : ''}`} />
-                </button>
+                  <Heart className={`h-4.5 w-4.5 ${isInWishlist ? 'fill-red-500 text-red-500 border-none' : 'text-neutral-600'}`} />
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="left">
                 <p>{isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}</p>
               </TooltipContent>
             </Tooltip>
 
+            {/* Quick View Button */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <button 
+                <Button
+                  size="icon"
+                  variant="secondary"
                   onClick={handleQuickView}
-                  className="flex-1 px-3 hover:text-primary transition-colors border-b border-neutral-100 dark:border-neutral-800"
+                  className="w-8 h-8 rounded-full bg-white text-black hover:bg-primary hover:text-primary-foreground border border-neutral-200/80 shadow-md flex items-center justify-center transition-all duration-200"
+                  aria-label="Quick View"
                 >
-                  <Search className="h-5 w-5" />
-                </button>
+                  <Eye className="h-4.5 w-4.5 text-neutral-600 hover:text-primary-foreground" />
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="left">
                 <p>Quick View</p>
               </TooltipContent>
             </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  className="flex-1 px-3 hover:text-primary transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toast.info('Comparison feature coming soon');
-                  }}
-                >
-                  <Layers className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>Compare</p>
-              </TooltipContent>
-            </Tooltip>
-           </TooltipProvider>
+          </TooltipProvider>
         </div>
 
-        {/* Admin Overlay */}
+        {/* Admin Menu */}
         {isAdmin && (
-          <div className="absolute bottom-2 right-2">
+          <div className="absolute bottom-3 right-3 z-20">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="outline" className="h-8 w-8 border-neutral-800 bg-black/50 text-white hover:bg-primary">
-                  <MoreVertical className="h-4 w-4" />
+                <Button size="icon" variant="secondary" className="h-7 w-7 rounded-full bg-white/90 border shadow hover:bg-white">
+                  <MoreVertical className="h-3.5 w-3.5 text-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-40 rounded-xl">
                 <DropdownMenuItem onClick={() => router.push(`/admin/products/${product.slug}`)}>
-                  Edit
+                  <Edit className="mr-2 h-3.5 w-3.5" /> Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDeleteProduct} className="text-destructive">
-                  Delete
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/admin/products')}>
+                  <Settings className="mr-2 h-3.5 w-3.5" /> Manage
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -261,60 +299,48 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
         )}
       </div>
 
-      {/* Technical Content Section */}
-      <div className="p-4 flex flex-col gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-            {product.isNewArrival && <span className="text-emerald-500">[ NEW_ARRV ]</span>}
-            {product.isFeatured && <span className="text-primary">[ FT_ITEM ]</span>}
-          </div>
-          <Link href={`/product/${product.slug}`} className="block">
-            <h3 className="text-base font-bold uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors">
+      {/* Content Area */}
+      <div className="p-5 flex flex-col justify-between flex-grow gap-4">
+        {/* Category & Title */}
+        <div className="space-y-1 w-full">
+          <Link href={`/shop?category=${mainCategory?.slug || ''}`} className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors block">
+            {categoryName}
+          </Link>
+          <Link href={`/product/${product.slug}`} className="block group/title">
+            <h3 className="text-sm font-bold text-foreground line-clamp-2 min-h-[38px] group-hover/title:text-primary transition-colors leading-snug">
               {product.name}
             </h3>
           </Link>
-          {(product.numReviews || 0) > 0 && (
-            <div 
-              className="flex items-center gap-1.5 mt-1"
-              aria-label={`${product.ratings || 0} out of 5 stars, ${product.numReviews || 0} reviews`}
-            >
-              <RatingStars rating={product.ratings || 0} starClassName="h-2.5 w-2.5" />
-              <span className="text-[9px] font-mono text-muted-foreground font-bold">({product.numReviews})</span>
-            </div>
-          )}
+
+          {/* Rating */}
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <RatingStars rating={product.ratings || 0} starClassName="h-3 w-3" />
+            <span className="text-[10px] text-muted-foreground font-bold">
+              ({product.numReviews || 0})
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-end justify-between">
+        {/* Price & Button Stack */}
+        <div className="flex items-end justify-between mt-auto pt-1">
           <div className="flex flex-col">
-             <span className="text-xs font-mono text-muted-foreground uppercase mb-1">Price_</span>
-             <div className="flex items-center gap-2">
-                <span className="text-xl font-black font-mono text-primary">
-                  ৳{Math.round(product.salePrice ?? product.price)}
-                </span>
-                {product.salePrice != null && product.salePrice < product.price && (
-                  <span className="text-xs font-mono text-muted-foreground line-through opacity-50">
-                    ৳{Math.round(product.price)}
-                  </span>
-                )}
-             </div>
+            <span className="text-[16px] font-black text-primary">
+              Tk {Math.round(product.salePrice ?? product.price).toLocaleString()}
+            </span>
+            {product.salePrice != null && product.salePrice < product.price && (
+              <span className="text-xs text-muted-foreground line-through decoration-primary/20">
+                Tk {Math.round(product.price).toLocaleString()}
+              </span>
+            )}
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="icon"
-                  className="rounded-none h-10 w-10 bg-primary hover:bg-primary-foreground hover:text-primary border border-primary transition-all"
-                  onClick={handleAddToCartClick}
-                  disabled={product.stock === 0}
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add to cart</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button
+            onClick={handleAddToCartClick}
+            disabled={product.stock === 0}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors duration-200"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {product.stock === 0 ? 'Out' : 'Add'}
+          </Button>
         </div>
       </div>
 
@@ -326,4 +352,3 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
     </div>
   );
 }
-

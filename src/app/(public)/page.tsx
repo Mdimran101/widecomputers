@@ -5,7 +5,6 @@ import Image from 'next/image';
 
 import dynamic from 'next/dynamic';
 import { HeroSlider } from '@/components/storefront/HeroSlider';
-import { AarongPromoBanners } from '@/components/storefront/AarongPromoBanners';
 import { FreeDeliveryBanner } from '@/components/storefront/FreeDeliveryBanner';
 import {
   SectionSkeleton,
@@ -246,9 +245,6 @@ export default async function Home() {
               />
             )}
 
-            {/* Aarong Promotional Banners Section */}
-            <AarongPromoBanners />
-
             {/* 8. Featured Collections */}
             {data.featuredProducts.length > 0 && (
               <ProductCarouselSection
@@ -330,9 +326,6 @@ export default async function Home() {
               layout={ui.layout}
             />
           )}
-
-          {/* Aarong Promotional Banners Section */}
-          <AarongPromoBanners />
 
           {/* 8. Featured Collections */}
           {data.featuredProducts.length > 0 && (

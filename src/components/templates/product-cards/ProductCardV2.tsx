@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ShoppingCart, Heart, Search, MoreVertical, Edit, Trash2, Settings, PlusCircle } from 'lucide-react';
-import { RatingStars } from '@/components/ui/rating-stars';
-import { Badge } from '@/components/ui/badge';
+import { ShoppingCart, Heart, Eye, MoreVertical, Edit, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
+import { fbEvent } from '@/lib/fpixel';
+import { ttEvent } from '@/lib/tiktok';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,10 +69,7 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
   } : initialProduct;
 
   const hasVariants = product.variants && product.variants.length > 0;
-
   const [showQuickViewModal, setShowQuickViewModal] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const quickAddRef = useRef<HTMLButtonElement>(null);
 
   const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price) 
     ? Math.round(((product.price - product.salePrice) / product.price) * 100) 
@@ -80,6 +77,7 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
 
   const handleAddToCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (hasVariants) {
       setShowQuickViewModal(true);
     } else {
@@ -96,19 +94,57 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
       quantity: 1,
       image: product.images?.[0]
     }));
+
+    // Track AddToCart
+    const addToCartPayload = {
+      content_name: product.name,
+      content_category: product.categories?.[0]?.name || 'Uncategorized',
+      content_ids: [product._id],
+      content_type: 'product',
+      value: product.salePrice || product.price,
+      currency: 'BDT',
+      quantity: 1
+    };
+    const trackingUser = {
+      em: session?.user?.email || undefined,
+      ph: (session?.user as any)?.phone || undefined,
+      fn: session?.user?.name || undefined
+    };
+    fbEvent('AddToCart', addToCartPayload, trackingUser);
+    ttEvent('AddToCart', addToCartPayload, trackingUser);
+
     toast.success(`${product.name} added to cart`);
   };
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (status === 'unauthenticated') {
       toast.error('Please login to add to wishlist');
       return;
     }
 
-    // Optimistic update
     dispatch(toggleWishlist(product._id));
     const willBeInWishlist = !isInWishlist;
+
+    if (willBeInWishlist) {
+      // Track AddToWishlist
+      const addToWishlistPayload = {
+        content_name: product.name,
+        content_category: product.categories?.[0]?.name || 'Uncategorized',
+        content_ids: [product._id],
+        content_type: 'product',
+        value: product.salePrice || product.price,
+        currency: 'BDT'
+      };
+      const trackingUser = {
+        em: session?.user?.email || undefined,
+        ph: (session?.user as any)?.phone || undefined,
+        fn: session?.user?.name || undefined
+      };
+      fbEvent('AddToWishlist', addToWishlistPayload, trackingUser);
+      ttEvent('AddToWishlist', addToWishlistPayload, trackingUser);
+    }
 
     try {
       const res = await fetch('/api/wishlist', {
@@ -124,7 +160,6 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
       toast.success(willBeInWishlist ? 'Added to wishlist' : 'Removed from wishlist');
     } catch (err) {
       console.error('Wishlist error:', err);
-      // Rollback
       dispatch(toggleWishlist(product._id));
       toast.error('Failed to sync wishlist. Please try again.');
     }
@@ -132,6 +167,7 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
 
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setShowQuickViewModal(true);
   };
 
@@ -158,69 +194,90 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
     }
   };
 
+  const mainCategory = product.categories && product.categories.length > 0 ? product.categories[0] : null;
+  const categoryName = mainCategory?.name || 'WIDE COMPUTERS';
+
   return (
-    <div 
-      className="group relative flex flex-col bg-background rounded-none border border-border/50 overflow-hidden transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgba(255,255,255,0.05)]"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      data-aos="fade-up"
-    >
-      {/* Image Section */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-muted/20">
+    <div className="group relative flex flex-col bg-background rounded-md border border-border/60 overflow-hidden transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] h-full">
+      {/* Image & Hover Action Buttons */}
+      <div className="relative aspect-square w-full overflow-hidden bg-muted/10 flex items-center justify-center border-b border-border/30">
         <Link href={`/product/${product.slug}`} className="relative block h-full w-full">
           <Image
             src={product.images?.[0] || '/placeholder.png'}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </Link>
 
-        {/* Badges Overlay */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        {/* Badges */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
           {discount > 0 && (
-            <div className="bg-primary text-primary-foreground text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+            <div className="bg-primary text-primary-foreground text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow">
               -{discount}%
             </div>
           )}
           {isFlashSale && (
-            <div className="bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg animate-pulse">
+            <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow animate-pulse">
               Flash
             </div>
           )}
         </div>
 
-        {/* Floating Actions Overlay */}
-        <div className={`absolute inset-0 bg-black/20 backdrop-blur-[2px] hidden md:flex items-center justify-center gap-3 transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Ryans Style Floating Action Buttons (Cart, Wishlist, Quick View) */}
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-2 z-10 translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
           <TooltipProvider>
+            {/* Add to Cart Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-11 w-11 rounded-full shadow-2xl hover:scale-110 transition-transform bg-white/90 dark:bg-neutral-900/90"
-                  onClick={handleFavorite}
+                  onClick={handleAddToCartClick}
+                  disabled={product.stock === 0}
+                  className="w-8 h-8 rounded-full bg-white text-black hover:bg-primary hover:text-primary-foreground border border-neutral-200/80 shadow-md flex items-center justify-center transition-all duration-200 disabled:opacity-50"
+                  aria-label="Add to Cart"
                 >
-                  <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
+                  <ShoppingCart className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="left">
+                <p>{product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Wishlist Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  onClick={handleFavorite}
+                  className="w-8 h-8 rounded-full bg-white text-black hover:bg-primary hover:text-primary-foreground border border-neutral-200/80 shadow-md flex items-center justify-center transition-all duration-200"
+                  aria-label="Add to Wishlist"
+                >
+                  <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
                 <p>{isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}</p>
               </TooltipContent>
             </Tooltip>
 
+            {/* Quick View Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-12 w-12 rounded-full shadow-2xl hover:scale-110 transition-transform bg-[#00a870] text-white hover:bg-[#008f5d] border-none"
                   onClick={handleQuickView}
+                  className="w-8 h-8 rounded-full bg-white text-black hover:bg-primary hover:text-primary-foreground border border-neutral-200/80 shadow-md flex items-center justify-center transition-all duration-200"
+                  aria-label="Quick View"
                 >
-                  <Search className="h-5 w-5" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="left">
                 <p>Quick View</p>
               </TooltipContent>
             </Tooltip>
@@ -229,73 +286,54 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
 
         {/* Admin Menu */}
         {isAdmin && (
-          <div className="absolute top-4 right-4 z-20">
+          <div className="absolute bottom-2.5 right-2.5 z-20">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full bg-white/50 backdrop-blur-md hover:bg-white/80">
-                  <MoreVertical className="h-4 w-4" />
+                <Button size="icon" variant="secondary" className="h-7 w-7 rounded-full bg-white/90 border shadow hover:bg-white">
+                  <MoreVertical className="h-3.5 w-3.5 text-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 rounded-2xl">
+              <DropdownMenuContent align="end" className="w-40 rounded-xl">
                 <DropdownMenuItem onClick={() => router.push(`/admin/products/${product.slug}`)}>
-                  <Edit className="mr-2 h-4 w-4" /> Edit
+                  <Edit className="mr-2 h-3.5 w-3.5" /> Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDeleteProduct} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/admin/products')}>
-                  <Settings className="mr-2 h-4 w-4" /> Dashboard
+                  <Settings className="mr-2 h-3.5 w-3.5" /> Manage
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         )}
-
-        {/* Quick Add Tab */}
-        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-all duration-500 transform ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-          <Button 
-            ref={quickAddRef}
-            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
-            onClick={handleAddToCartClick}
-            disabled={product.stock === 0}
-          >
-            <ShoppingCart className="mr-2 h-4 w-4" /> {product.stock === 0 ? 'Out of Stock' : 'Quick Add'}
-          </Button>
-        </div>
       </div>
 
       {/* Content Section */}
-      <div className="p-6 flex flex-col items-center text-center space-y-3">
-        <div className="space-y-1">
-          <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-            {product.isNewArrival && <span className="text-emerald-500">New Arrival</span>}
-            {product.isFeatured && <span className="text-primary">Best Choice</span>}
-          </div>
-          <Link href={`/product/${product.slug}`} className="block group/title">
-            <h3 className="text-lg font-bold tracking-tight line-clamp-1 group-hover/title:text-primary transition-colors">
-              {product.name}
-            </h3>
+      <div className="p-4 flex flex-col items-center text-center flex-grow justify-between gap-2.5">
+        <div className="space-y-1 w-full">
+          {/* Brand/Category Label */}
+          <Link href={`/shop?category=${mainCategory?.slug || ''}`} className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors block">
+            {categoryName}
           </Link>
           
-          {(product.numReviews || 0) > 0 && (
-            <div 
-              className="flex items-center justify-center gap-1.5 mt-1"
-              aria-label={`${product.ratings || 0} out of 5 stars, ${product.numReviews || 0} reviews`}
-            >
-              <RatingStars rating={product.ratings || 0} starClassName="h-3 w-3" />
-              <span className="text-[10px] text-muted-foreground font-bold">({product.numReviews})</span>
-            </div>
-          )}
+          {/* Product Title */}
+          <Link href={`/product/${product.slug}`} className="block group/title">
+            <h4 className="text-[13px] font-bold leading-snug tracking-tight line-clamp-2 min-h-[36px] text-foreground hover:text-primary transition-colors">
+              {product.name}
+            </h4>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-black text-[#00a870]">
-            ৳{Math.round(product.salePrice ?? product.price)}
+        {/* Price Tag */}
+        <div className="flex items-center justify-center gap-2 mt-auto">
+          <span className="text-[15px] font-extrabold text-primary">
+            Tk {Math.round(product.salePrice ?? product.price).toLocaleString()}
           </span>
           {product.salePrice != null && product.salePrice < product.price && (
-            <span className="text-sm text-muted-foreground line-through decoration-primary/20">
-              ৳{Math.round(product.price)}
+            <span className="text-xs text-muted-foreground line-through decoration-primary/20">
+              Tk {Math.round(product.price).toLocaleString()}
             </span>
           )}
         </div>
@@ -309,4 +347,3 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
     </div>
   );
 }
-
