@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Heart, X, Plus, Minus } from 'lucide-react';
 import { RatingStars } from '@/components/ui/rating-stars';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useReducer } from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toast } from 'sonner';
@@ -25,13 +25,50 @@ interface QuickViewModalProps {
   onClose: () => void;
 }
 
+type VariantState = {
+  selectedColor: string | null;
+  selectedSize: string | null;
+  quantity: number;
+  activeImage: string;
+};
+type VariantAction =
+  | { type: 'RESET'; payload: VariantState }
+  | { type: 'SET_COLOR'; color: string | null }
+  | { type: 'SET_SIZE'; size: string | null }
+  | { type: 'SET_QUANTITY'; quantity: number }
+  | { type: 'SET_IMAGE'; image: string };
+
+function variantReducer(state: VariantState, action: VariantAction): VariantState {
+  switch (action.type) {
+    case 'RESET':        return action.payload;
+    case 'SET_COLOR':    return { ...state, selectedColor: action.color };
+    case 'SET_SIZE':     return { ...state, selectedSize: action.size };
+    case 'SET_QUANTITY': return { ...state, quantity: action.quantity };
+    case 'SET_IMAGE':    return { ...state, activeImage: action.image };
+    default:             return state;
+  }
+}
+
 export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps) {
   const dispatch = useAppDispatch();
   const { data: session } = useSession();
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState(product.images?.[0] || '/placeholder.jpg');
+
+  const [variantState, variantDispatch] = useReducer(variantReducer, {
+    selectedColor: null,
+    selectedSize: null,
+    quantity: 1,
+    activeImage: product.images?.[0] || '/placeholder.jpg',
+  });
+
+  const selectedColor = variantState.selectedColor;
+  const selectedSize  = variantState.selectedSize;
+  const quantity      = variantState.quantity;
+  const activeImage   = variantState.activeImage;
+
+  const setSelectedColor = (color: string | null) => variantDispatch({ type: 'SET_COLOR', color });
+  const setSelectedSize  = (size:  string | null) => variantDispatch({ type: 'SET_SIZE',  size });
+  const setQuantity      = (q: number)            => variantDispatch({ type: 'SET_QUANTITY', quantity: q });
+  const setActiveImage   = (image: string)        => variantDispatch({ type: 'SET_IMAGE', image });
 
   // Derive available options from variants
   const uniqueColors = useMemo(() =>
@@ -74,7 +111,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
       const variantImgs = Array.from(
         new Set((product.variants || []).map((v: any) => v.image).filter(Boolean))
       ) as string[];
-      
+
       if (activeVariant?.image) {
         const idx = variantImgs.indexOf(activeVariant.image);
         if (idx > -1) {
@@ -87,51 +124,68 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
     return product.images || [];
   }, [product.images, product.variants, activeVariant, hasVariants]);
 
-  const [prevIsOpen, setPrevIsOpen] = useState(false);
-  const [prevProductId, setPrevProductId] = useState<string | null>(null);
-  const [prevActiveVariant, setPrevActiveVariant] = useState<any>(null);
-
-  if (isOpen !== prevIsOpen || product?._id !== prevProductId) {
-    setPrevIsOpen(isOpen);
-    setPrevProductId(product?._id || null);
+  // Reset state when modal opens or product changes.
+  // Uses a single reducer dispatch so all state updates are batched into one render.
+  useEffect(() => {
     if (isOpen) {
       const initialColor = uniqueColors[0] || null;
-      setSelectedColor(initialColor);
-
       const initialSizes = (product.variants || [])
         .filter((v: any) => !initialColor || v.color === initialColor)
         .map((v: any) => v.size)
         .filter(Boolean);
       const initialSize = initialSizes[0] || null;
-      setSelectedSize(initialSize);
-      setQuantity(1);
-
       const defaultVar = product.variants && product.variants.length > 0 ? product.variants[0] : null;
       const initialImg = defaultVar?.image || product.images?.[0] || '/placeholder.jpg';
-      setActiveImage(initialImg);
-      setPrevActiveVariant(defaultVar);
+      variantDispatch({
+        type: 'RESET',
+        payload: {
+          selectedColor: initialColor,
+          selectedSize: initialSize,
+          quantity: 1,
+          activeImage: initialImg,
+        },
+      });
     } else {
-      setSelectedColor(null);
-      setSelectedSize(null);
-      setQuantity(1);
+      variantDispatch({
+        type: 'RESET',
+        payload: {
+          selectedColor: null,
+          selectedSize: null,
+          quantity: 1,
+          activeImage: product.images?.[0] || '/placeholder.jpg',
+        },
+      });
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product?._id]);
 
-  // Handle selectedSize validation during render:
-  if (isOpen && (selectedSize == null || !availableSizes.includes(selectedSize))) {
-    setSelectedSize(availableSizes[0] || null);
-  }
-
-  // Handle activeImage sync with activeVariant during render:
-  if (isOpen && activeVariant !== prevActiveVariant) {
-    setPrevActiveVariant(activeVariant);
+  // Sync activeImage when active variant changes — done via useEffect
+  useEffect(() => {
+    if (!isOpen) return;
     if (activeVariant?.image) {
       setActiveImage(activeVariant.image);
     } else if (hasVariants) {
       const firstVarWithImg = (product.variants || []).find((v: any) => v.image);
       setActiveImage(firstVarWithImg?.image || product.images?.[0] || '/placeholder.jpg');
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVariant]);
+
+  // Fix selectedSize if out of available sizes — done via useEffect
+  useEffect(() => {
+    if (!isOpen) return;
+    if (selectedSize == null || !availableSizes.includes(selectedSize)) {
+      setSelectedSize(availableSizes[0] || null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableSizes]);
+
+  // Clamp quantity to available stock — derived during render, no effect needed
+  const effectiveQuantity =
+    isOpen && displayStock > 0 && quantity > displayStock
+      ? displayStock
+      : quantity;
+
 
   useEffect(() => {
     if (isOpen) {
@@ -154,10 +208,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
     }
   }, [isOpen, product._id, session, displayPrice, displaySalePrice, product.name, product.categories]);
 
-  // Adjust quantity if it exceeds available stock
-  if (isOpen && displayStock > 0 && quantity > displayStock) {
-    setQuantity(displayStock);
-  }
+  // effectiveQuantity is already clamped above — no render-body setState needed
 
   const router = useRouter();
 
@@ -169,7 +220,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
       name: product.name,
       price: (displaySalePrice !== undefined && displaySalePrice !== null) ? displaySalePrice : displayPrice,
       basePrice: displayPrice,
-      quantity: quantity,
+      quantity: effectiveQuantity,
       image: activeImage,
       color: selectedColor || undefined,
       size: selectedSize || undefined
@@ -181,9 +232,9 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
       content_category: product.categories?.[0]?.name || 'Uncategorized',
       content_ids: [product._id],
       content_type: 'product',
-      value: (displaySalePrice ?? displayPrice) * quantity,
+      value: (displaySalePrice ?? displayPrice) * effectiveQuantity,
       currency: 'BDT',
-      quantity: quantity
+      quantity: effectiveQuantity
     };
     const trackingUser = {
       em: session?.user?.email || undefined,
@@ -373,12 +424,12 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 >
                   <Minus className="h-3 w-3" />
                 </button>
-                <span className="w-10 text-center font-bold text-sm">{quantity}</span>
+                <span className="w-10 text-center font-bold text-sm">{effectiveQuantity}</span>
                 <button
-                  onClick={() => setQuantity(prev => {
-                    if (displayStock <= 0) return prev;
-                    return Math.min(displayStock, prev + 1);
-                  })}
+                  onClick={() => {
+                    if (displayStock <= 0) return;
+                    setQuantity(Math.min(displayStock, quantity + 1));
+                  }}
                   className="px-4 py-2 hover:bg-gray-200 transition-colors"
                 >
                   <Plus className="h-3 w-3" />

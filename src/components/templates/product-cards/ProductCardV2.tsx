@@ -71,8 +71,8 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
   const hasVariants = product.variants && product.variants.length > 0;
   const [showQuickViewModal, setShowQuickViewModal] = useState(false);
 
-  const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price) 
-    ? Math.round(((product.price - product.salePrice) / product.price) * 100) 
+  const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price)
+    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
     : 0;
 
   const handleAddToCartClick = (e: React.MouseEvent) => {
@@ -152,11 +152,11 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product._id }),
       });
-      
+
       if (!res.ok) {
         throw new Error('Server synchronization failed');
       }
-      
+
       toast.success(willBeInWishlist ? 'Added to wishlist' : 'Removed from wishlist');
     } catch (err) {
       console.error('Wishlist error:', err);
@@ -206,23 +206,26 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
             src={product.images?.[0] || '/placeholder.png'}
             alt={product.name}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </Link>
 
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
-          {discount > 0 && (
-            <div className="bg-primary text-primary-foreground text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow">
-              -{discount}%
+        {/* Unified Ribbon Badge (Top Left) */}
+        {(isFlashSale || discount > 0 || product.isNewArrival || product.isFeatured) && (
+          <div className="absolute top-0 left-0 overflow-hidden w-20 h-20 z-10 pointer-events-none">
+            <div className={`absolute top-0 left-0 text-[8px] font-black py-0.5 w-28 text-center -rotate-45 -translate-x-8 translate-y-3.5 shadow-md uppercase tracking-wider ${isFlashSale ? 'bg-orange-600 text-white animate-pulse' :
+                discount > 0 ? 'bg-primary text-primary-foreground' :
+                  product.isNewArrival ? 'bg-emerald-600 text-white' :
+                    'bg-amber-400 text-neutral-950'
+              }`}>
+              {isFlashSale ? 'Flash' :
+                discount > 0 ? `${discount}% OFF` :
+                  product.isNewArrival ? 'New' :
+                    'Featured'}
             </div>
-          )}
-          {isFlashSale && (
-            <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow animate-pulse">
-              Flash
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Ryans Style Floating Action Buttons (Cart, Wishlist, Quick View) */}
         <div className="absolute top-2.5 right-2.5 flex flex-col gap-2 z-10 translate-x-3 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
@@ -317,7 +320,7 @@ export default function ProductCardV2({ product: initialProduct, isFlashSale }: 
           <Link href={`/shop?category=${mainCategory?.slug || ''}`} className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors block">
             {categoryName}
           </Link>
-          
+
           {/* Product Title */}
           <Link href={`/product/${product.slug}`} className="block group/title">
             <h4 className="text-[13px] font-bold leading-snug tracking-tight line-clamp-2 min-h-[36px] text-foreground hover:text-primary transition-colors">

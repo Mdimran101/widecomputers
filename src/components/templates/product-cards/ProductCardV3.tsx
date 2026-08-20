@@ -72,8 +72,8 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
   const hasVariants = product.variants && product.variants.length > 0;
   const [showQuickViewModal, setShowQuickViewModal] = useState(false);
 
-  const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price) 
-    ? Math.round(((product.price - product.salePrice) / product.price) * 100) 
+  const discount = (product.price > 0 && product.salePrice && product.salePrice < product.price)
+    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
     : 0;
 
   const handleAddToCartClick = (e: React.MouseEvent) => {
@@ -153,17 +153,19 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product._id }),
       });
-      
+
       if (!res.ok) {
         throw new Error('Server error updating wishlist');
       }
-      
+
       toast.success(willBeInWishlist ? 'Saved to wishlist' : 'Removed from wishlist');
     } catch (err) {
       console.error('Wishlist error:', err);
       dispatch(toggleWishlist(product._id));
       toast.error('Failed to sync wishlist. Please try again.');
     }
+  };
+
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -213,27 +215,24 @@ export default function ProductCardV3({ product: initialProduct, isFlashSale }: 
           />
         </Link>
 
-        {/* Badge Overlay */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none">
-          {product.isNewArrival && (
-            <div className="bg-background/95 text-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-border/50 backdrop-blur-sm shadow-sm">
-              New Arrival
+        {/* Unified Ribbon Badge (Top Left) */}
+        {(isFlashSale || discount > 0 || product.isNewArrival || product.isFeatured) && (
+          <div className="absolute top-0 left-0 overflow-hidden w-20 h-20 z-10 pointer-events-none">
+            <div className={`absolute top-0 left-0 text-[8px] font-black py-0.5 w-28 text-center -rotate-45 -translate-x-8 translate-y-3.5 shadow-md uppercase tracking-wider ${isFlashSale ? 'bg-orange-600 text-white animate-pulse' :
+                discount > 0 ? 'bg-primary text-primary-foreground' :
+                  product.isNewArrival ? 'bg-emerald-600 text-white' :
+                    'bg-amber-400 text-neutral-950'
+              }`}>
+              {isFlashSale ? 'Flash' :
+                discount > 0 ? `${discount}% OFF` :
+                  product.isNewArrival ? 'New' :
+                    'Featured'}
             </div>
-          )}
-          {discount > 0 && (
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-              -{discount}%
-            </div>
-          )}
-          {isFlashSale && (
-            <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-pulse">
-              Flash
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Quick Actions (Wishlist & Quick View) */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
           <TooltipProvider>
             {/* Wishlist Button */}
             <Tooltip>

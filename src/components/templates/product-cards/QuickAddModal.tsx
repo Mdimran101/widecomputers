@@ -54,12 +54,8 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
     [product.variants, selectedColor, selectedSize]
   );
 
-  const [prevIsOpen, setPrevIsOpen] = useState(false);
-  const [prevProductId, setPrevProductId] = useState<string | null>(null);
-
-  if (isOpen !== prevIsOpen || product?._id !== prevProductId) {
-    setPrevIsOpen(isOpen);
-    setPrevProductId(product?._id || null);
+  // Reset state when modal opens or product changes — done safely via useEffect
+  useEffect(() => {
     if (isOpen) {
       const initialColor = uniqueColors[0] || null;
       setSelectedColor(initialColor);
@@ -74,11 +70,17 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
       setSelectedColor(null);
       setSelectedSize(null);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product?._id]);
 
-  if (isOpen && (selectedSize == null || !availableSizes.includes(selectedSize))) {
-    setSelectedSize(availableSizes[0] || null);
-  }
+  // Fix selectedSize if out of available sizes — done via useEffect
+  useEffect(() => {
+    if (!isOpen) return;
+    if (selectedSize == null || !availableSizes.includes(selectedSize)) {
+      setSelectedSize(availableSizes[0] || null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableSizes]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
