@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -123,8 +123,7 @@ export default function FooterV1() {
           <div className="flex flex-col items-center text-center md:items-start md:text-left gap-4 lg:col-span-2">
             <Logo textClassName="text-xl md:text-2xl whitespace-nowrap" />
             <p className="text-sm text-muted-foreground w-full md:w-4/5">
-              If you can dream it, you can do it.
-              So, our dream is best clothing for our customers
+              Your ultimate destination for premium laptops, high-performance desktop components, gaming rigs, and enterprise server solutions. Delivering top-tier technology and unmatched reliability to power your dreams.
             </p>
 
             {/* PWA Download App Button */}
