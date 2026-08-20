@@ -73,7 +73,7 @@ const settingsSchema = z.object({
     linkedin: z.string().nullish().transform(v => v ?? ''),
     tiktok: z.string().nullish().transform(v => v ?? ''),
     whatsapp: z.string().nullish().transform(v => v ?? ''),
-  }),
+  }).nullish(),
   marqueeText: z.string().nullish().transform(val => val ?? ''),
   metaTitle: z.string().nullish().transform(val => val ?? ''),
   metaDescription: z.string().nullish().transform(val => val ?? ''),
